@@ -1,0 +1,15 @@
+# Unity generated folders
+[Ll]ibrary/
+[Tt]emp/
+[Ll]ogs/
+[Oo]bj/
+[Bb]uild/
+[Bb]uilds/
+UserSettings/
+.vs/
+
+# OS / editor junk
+.DS_Store
+Thumbs.db
+*.csproj
+*.sln
