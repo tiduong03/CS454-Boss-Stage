@@ -4,3 +4,8 @@
 
 ## Programming Language
  This project is developed using C# with the Unity game engine since Unity uses C# as its primary scripting language.
+
+## Project Planning
+- Feature list: docs/features.md
+- MVP: docs/mvp.md
+- User stories tracked with GitHub Issues
