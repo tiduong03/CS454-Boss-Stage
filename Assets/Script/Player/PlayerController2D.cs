@@ -82,7 +82,7 @@ public class PlayerController2D : MonoBehaviour
 
     void Jump()
     {
-        rb.velocity = new Vector2(rb.velocity.x, jumpForce);
+        rb.linearVelocity = new Vector2(rb.linearVelocity.x, jumpForce);
     }
 
     void TryDash()
@@ -127,10 +127,10 @@ public class PlayerController2D : MonoBehaviour
     {
         if (isDashing)
         {
-            rb.velocity = new Vector2(facingDir * dashSpeed, rb.velocity.y);
+            rb.linearVelocity = new Vector2(facingDir * dashSpeed, rb.linearVelocity.y);
             return;
         }
 
-        rb.velocity = new Vector2(moveInput * moveSpeed, rb.velocity.y);
+        rb.linearVelocity = new Vector2(moveInput * moveSpeed, rb.linearVelocity.y);
     }
 }
