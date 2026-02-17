@@ -88,3 +88,8 @@ ServerData
 
 # Auto-generated scenes by play mode tests
 [Aa]ssets/[Ii]nit[Tt]est[Ss]cene*.unity*
+
+# Unity recovery backups
+[Aa]ssets/_Recovery/
+[Aa]ssets/_Recovery.meta
+*.slnx

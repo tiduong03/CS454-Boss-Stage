@@ -1,49 +1,56 @@
 using UnityEngine;
 
-public class PlayerController2D : MonoBehaviour
+public class PlayerControl : MonoBehaviour
 {
     [Header("Movement")]
-    public float moveSpeed = 8f;
+    [SerializeField] private float moveSpeed = 8f;
 
     [Header("Jump")]
-    public float jumpForce = 12f;
+    [SerializeField] private float jumpForce = 12f;
 
     [Header("Dash")]
-    public float dashSpeed = 18f;
-    public float dashDuration = 0.15f;
-    public float dashCooldown = 0.6f;
+    [SerializeField] private float dashSpeed = 18f;
+    [SerializeField] private float dashDuration = 0.15f;
+    [SerializeField] private float dashCooldown = 0.6f;
 
     [Header("Ground Check")]
-    public Transform groundCheck;
-    public float groundCheckRadius = 0.2f;
-    public LayerMask groundLayer;
+    [SerializeField] private Transform groundCheck;
+    [SerializeField] private float groundCheckRadius = 0.2f;
+    [SerializeField] private LayerMask groundLayer;
 
     private Rigidbody2D rb;
 
     // Input/state
     private float moveInput;
     private bool isGrounded;
+    private int direction = 1; // 1 = right, -1 = left
 
-    // Facing + dash state
-    private int facingDir = 1; // 1 = right, -1 = left
+    // Dash state
     private bool isDashing;
     private float dashTimeLeft;
     private float lastDashTime = -999f;
 
+    // Knockback state
+    private bool isKnockedBack;
+    private float knockbackTimeLeft;
+    private Vector2 knockbackVelocity;
+
     void Awake()
     {
-        rb = GetComponent<Rigidbody2D>();
+        if (!rb) rb = GetComponent<Rigidbody2D>();
     }
 
     void Update()
     {
         ReadInput();
         UpdateFacingDirection();
-        UpdateGrounded();
+        UpdateIsGrounded();
 
         TryJump();
         TryDash();
         UpdateDashTimer();
+
+        UpdateKnockbackTimer();
     }
 
     void FixedUpdate()
@@ -59,11 +66,11 @@ public class PlayerController2D : MonoBehaviour
 
     void UpdateFacingDirection()
     {
-        if (moveInput > 0) facingDir = 1;
-        else if (moveInput < 0) facingDir = -1;
+        if (moveInput > 0) direction = 1;
+        else if (moveInput < 0) direction = -1;
     }
 
-    void UpdateGrounded()
+    void UpdateIsGrounded()
     {
         isGrounded = Physics2D.OverlapCircle(groundCheck.position, groundCheckRadius, groundLayer);
     }
@@ -74,6 +81,7 @@ public class PlayerController2D : MonoBehaviour
     void TryJump()
     {
         if (isDashing) return;
+        if (isKnockedBack) return;
         if (!Input.GetButtonDown("Jump")) return;
         if (!isGrounded) return;
 
@@ -87,6 +95,7 @@ public class PlayerController2D : MonoBehaviour
 
     void TryDash()
     {
+        if (isKnockedBack) return;
         if (!Input.GetKeyDown(KeyCode.LeftShift)) return;
         if (!CanDash()) return;
 
@@ -120,14 +129,44 @@ public class PlayerController2D : MonoBehaviour
         isDashing = false;
     }
 
+    void UpdateKnockbackTimer()
+    {
+        if (!isKnockedBack) return;
 
+        knockbackTimeLeft -= Time.deltaTime;
+
+        if (knockbackTimeLeft <= 0f)
+            isKnockedBack = false;
+    }
+
+    // Called by enemies when they hit the player.
+    public void ApplyKnockback(Vector2 velocity, float duration)
+    {
+        if (!rb) rb = GetComponent<Rigidbody2D>();
+
+        // Cancel dash
+        isDashing = false;
+        dashTimeLeft = 0f;
+
+        isKnockedBack = true;
+        knockbackTimeLeft = duration;
+        knockbackVelocity = velocity;
+
+        rb.linearVelocity = velocity;
+    }
 
     // Physics movement
     void ApplyMovement()
     {
+        if (isKnockedBack)
+        {
+            rb.linearVelocity = new Vector2(knockbackVelocity.x, rb.linearVelocity.y);
+            return;
+        }
+
         if (isDashing)
         {
-            rb.linearVelocity = new Vector2(facingDir * dashSpeed, rb.linearVelocity.y);
+            rb.linearVelocity = new Vector2(direction * dashSpeed, rb.linearVelocity.y);
             return;
         }
 
