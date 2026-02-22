@@ -50,7 +50,7 @@ public class PlayerHealth : MonoBehaviour
         Debug.Log("Player died!");
 
         // disable movement
-        var controller = GetComponent<PlayerControl>();
+        var controller = GetComponent<PlayerControlCenter>();
         if (controller != null) controller.enabled = false;
 
         // (later) show lose screen / restart level
