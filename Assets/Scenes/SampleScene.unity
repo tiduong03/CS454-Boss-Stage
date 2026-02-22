@@ -255,7 +255,13 @@ GameObject:
   - component: {fileID: 667415037}
   - component: {fileID: 667415036}
   - component: {fileID: 667415040}
-  - component: {fileID: 667415041}
+  - component: {fileID: 667415046}
+  - component: {fileID: 667415045}
+  - component: {fileID: 667415044}
+  - component: {fileID: 667415042}
+  - component: {fileID: 667415048}
+  - component: {fileID: 667415047}
+  - component: {fileID: 667415049}
   m_Layer: 0
   m_Name: Player
   m_TagString: Player
@@ -424,7 +430,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   maxHP: 100
---- !u!114 &667415041
+--- !u!114 &667415042
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -433,19 +439,99 @@ MonoBehaviour:
   m_GameObject: {fileID: 667415034}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 2a81ce1b3ba544945b2c207b8b829548, type: 3}
+  m_Script: {fileID: 11500000, guid: 1f05f393d45bb7f4baa048ef148823e2, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::PlayerControl
-  moveSpeed: 8
-  jumpForce: 12
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerKnockback
+--- !u!114 &667415044
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 667415034}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4387e117f19f91c48a072cabf72c4185, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerDash
   dashSpeed: 18
   dashDuration: 0.15
   dashCooldown: 0.6
+--- !u!114 &667415045
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 667415034}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 65df98ce73876fd4d978bb51dbb30e65, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerJump
+  jumpForce: 12
   groundCheck: {fileID: 583410787}
   groundCheckRadius: 0.2
   groundLayer:
     serializedVersion: 2
     m_Bits: 8
+--- !u!114 &667415046
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 667415034}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dfa98c356da3f7f4fbe2614d6e5ee14c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerBasicMovement
+  moveSpeed: 8
+--- !u!114 &667415047
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 667415034}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 25469a5818159924abf4be7c0e206745, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerControlCenter
+--- !u!114 &667415048
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 667415034}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 73b68cf7d2c3d0a4e91e78b4946d6b86, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerAttack
+  damage: 1
+  attackRange: 0.7
+  attackCooldown: 0.25
+  attackOffset: {x: 0.85, y: 0}
+  enemyLayer:
+    serializedVersion: 2
+    m_Bits: 64
+  enemyKnockbackX: 12
+--- !u!114 &667415049
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 667415034}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1f05f393d45bb7f4baa048ef148823e2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerKnockback
 --- !u!1 &2002837420
 GameObject:
   m_ObjectHideFlags: 0
@@ -624,29 +710,16 @@ GameObject:
   - component: {fileID: 2114684378}
   - component: {fileID: 2114684377}
   - component: {fileID: 2114684376}
-  - component: {fileID: 2114684375}
   - component: {fileID: 2114684380}
   - component: {fileID: 2114684381}
-  m_Layer: 0
+  - component: {fileID: 2114684382}
+  m_Layer: 6
   m_Name: Enemy 1
   m_TagString: Enemy
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &2114684375
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2114684373}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 15f6653936fc78043a503abe260ff0ff, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::EnemyHealth
-  maxHP: 3
 --- !u!61 &2114684376
 BoxCollider2D:
   m_ObjectHideFlags: 0
@@ -829,6 +902,19 @@ MonoBehaviour:
   knockbackX: 15
   knockbackY: 7.5
   knockbackDuration: 0.2
+--- !u!114 &2114684382
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2114684373}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 15f6653936fc78043a503abe260ff0ff, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::EnemyHealth
+  maxHP: 3
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0

@@ -17,7 +17,7 @@ public class EnemyHealth : MonoBehaviour
         //Debug.Log($"{gameObject.name} HP: {CurrentHP}");
     }
 
-    // (later) your player attack / hitbox will call this
+    // player attack will call this
     public void TakeDamage(int damageAmount)
     {
         if (IsDead) return;
