@@ -7,7 +7,7 @@ public class PlayerHealth : MonoBehaviour
     [Header("HP")]
     public int maxHP = 100;
 
-    public int CurrentHP { get; private set; }  // other scripts can read, not set directly
+    public int CurrentHP { get; private set; }
     public bool IsDead { get; private set; }
 
     // Start is called before the first frame update
@@ -16,7 +16,7 @@ public class PlayerHealth : MonoBehaviour
         CurrentHP = maxHP;
         IsDead = false;
 
-        Debug.Log("Player HP: " + CurrentHP);
+        //Debug.Log("Player HP: " + CurrentHP);
     }
 
     public void TakeDamage(int damageAmount)
@@ -49,12 +49,10 @@ public class PlayerHealth : MonoBehaviour
         IsDead = true;
         Debug.Log("Player died!");
 
-        // disable movement script so player can't move after death
-        var controller = GetComponent<PlayerController2D>();
-        if (controller != null) controller.enabled = false;
+        if (EndScreenUI.Instance != null)
+            EndScreenUI.Instance.ShowLose();
 
-        // (later) show lose screen / restart level
-        // SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+        gameObject.SetActive(false);
     }
 
     //Testing
