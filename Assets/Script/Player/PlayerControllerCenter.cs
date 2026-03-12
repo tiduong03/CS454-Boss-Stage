@@ -17,7 +17,6 @@ public class PlayerControlCenter : MonoBehaviour
     private PlayerAttack attack;
     private PlayerKnockbackReceiver knockback;
 
-    // Jump request (so physics happens in FixedUpdate)
     private bool jumpRequested;
 
     void Awake()
@@ -33,22 +32,20 @@ public class PlayerControlCenter : MonoBehaviour
 
     void Update()
     {
-        // Input + direction
         move.ReadMoveInput();
         move.UpdateFacingDirection();
 
-        // Jump
+        // Update jump state (ground / wall checks / timers)
+        jump.Tick(move.MoveInput);
+
         if (jump.CanJump(knockback.IsKnockedback, dash.IsDashing))
             jumpRequested = true;
 
-        // Dash
         dash.CanDash(knockback.IsKnockedback);
         dash.UpdateDashTimer();
 
-        //Attack
         attack.TryAttack(move.Direction, knockback.IsKnockedback, dash.IsDashing);
 
-        //Knockback timer
         knockback.UpdateKnockbackStatus();
     }
 
@@ -56,7 +53,7 @@ public class PlayerControlCenter : MonoBehaviour
     {
         if (jumpRequested)
         {
-            rb.linearVelocity = new Vector2(rb.linearVelocity.x, jump.JumpForce);
+            rb.linearVelocity = jump.GetJumpVelocity(rb.linearVelocity.x);
             jumpRequested = false;
         }
 
@@ -72,6 +69,25 @@ public class PlayerControlCenter : MonoBehaviour
             return;
         }
 
-        rb.linearVelocity = new Vector2(move.MoveInput * move.MoveSpeed, rb.linearVelocity.y);
+        jump.ApplyWallSlide();
+
+        float xVelocity = move.MoveInput * move.MoveSpeed;
+
+        // If sliding on a wall and pressing into it, don't keep pushing into the wall
+        if (jump.IsWallSliding)
+        {
+            bool pressingIntoWall =
+                (jump.WallSide == 1 && move.MoveInput > 0f) ||
+                (jump.WallSide == -1 && move.MoveInput < 0f);
+
+            if (pressingIntoWall)
+                xVelocity = 0f;
+        }
+
+        // Briefly lock horizontal movement after wall jump
+        if (jump.IsWallJumping)
+            xVelocity = jump.ForcedWallJumpX;
+
+        rb.linearVelocity = new Vector2(xVelocity, rb.linearVelocity.y);
     }
 }

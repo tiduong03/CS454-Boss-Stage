@@ -49,12 +49,10 @@ public class PlayerHealth : MonoBehaviour
         IsDead = true;
         Debug.Log("Player died!");
 
-        // disable movement
-        var controller = GetComponent<PlayerControlCenter>();
-        if (controller != null) controller.enabled = false;
+        if (EndScreenUI.Instance != null)
+            EndScreenUI.Instance.ShowLose();
 
-        // (later) show lose screen / restart level
-        // SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+        gameObject.SetActive(false);
     }
 
     //Testing

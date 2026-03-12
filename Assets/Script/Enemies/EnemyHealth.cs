@@ -3,21 +3,20 @@ using UnityEngine;
 public class EnemyHealth : MonoBehaviour
 {
     [Header("HP")]
-    public int maxHP = 3;
+    public int maxHP = 10;
+
+    [Header("Boss")]
+    [SerializeField] private bool isBoss = false;
 
     public int CurrentHP { get; private set; }
     public bool IsDead { get; private set; }
 
-    // Start is called before the first frame update
-    void Start()
+    private void Awake()
     {
         CurrentHP = maxHP;
         IsDead = false;
-
-        //Debug.Log($"{gameObject.name} HP: {CurrentHP}");
     }
 
-    // player attack will call this
     public void TakeDamage(int damageAmount)
     {
         if (IsDead) return;
@@ -32,11 +31,15 @@ public class EnemyHealth : MonoBehaviour
             Die();
     }
 
-    void Die()
+    private void Die()
     {
+        if (IsDead) return;
         IsDead = true;
 
-        // (later) play death animation
-        Destroy(gameObject);
+        // Only show win screen if this enemy is the boss
+        if (isBoss && EndScreenUI.Instance != null)
+            EndScreenUI.Instance.ShowWin();
+        
+        gameObject.SetActive(false);
     }
 }
