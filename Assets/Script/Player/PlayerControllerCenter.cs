@@ -76,9 +76,7 @@ public class PlayerControlCenter : MonoBehaviour
         // If sliding on a wall and pressing into it, don't keep pushing into the wall
         if (jump.IsWallSliding)
         {
-            bool pressingIntoWall =
-                (jump.WallSide == 1 && move.MoveInput > 0f) ||
-                (jump.WallSide == -1 && move.MoveInput < 0f);
+            bool pressingIntoWall = (jump.WallSide == 1 && move.MoveInput > 0f) || (jump.WallSide == -1 && move.MoveInput < 0f);
 
             if (pressingIntoWall)
                 xVelocity = 0f;

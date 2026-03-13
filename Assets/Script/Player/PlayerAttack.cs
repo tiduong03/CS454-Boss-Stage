@@ -6,33 +6,31 @@ public class PlayerAttack : MonoBehaviour
 {
     [Header("Attack")]
     [SerializeField] private int damage = 1;
-    [SerializeField] private float attackRange = 0.7f;
     [SerializeField] private float attackCooldown = 0.25f;
-
-    [Header("Hitbox")]
-    [SerializeField] private Vector2 attackOffset = new Vector2(0.85f, 0f);
-
-    [Header("Enemy Filter")]
-    [SerializeField] private LayerMask enemyLayer;
 
     [Header("Knockback")]
     [SerializeField] private float knockbackDistance = 12f;
     [SerializeField] private float knockbackHeight = 6f;
     [SerializeField] private float knockbackDuration = 0.2f;
 
+    [Header("Range Attack")]
+    [SerializeField] private Transform firePoint;
+    [SerializeField] private PlayerProjectile projectilePrefab;
+    [SerializeField] private float projectileSpeed = 8f;
+    [SerializeField] private int projectileDamage = 1;
+    [SerializeField] private int projectileLifetime = 3;
+
     private int attackDirection;
     private float lastAttackTime = -999f;
 
     public void TryAttack(int facingDirection, bool isKnockedBack, bool isDashing)
     {
-        attackDirection = facingDirection;
-
         if (!Input.GetMouseButtonDown(0)) return;
         if (isKnockedBack || isDashing) return;
         if (OnCooldown()) return;
 
         lastAttackTime = Time.time;
-        Attack(facingDirection);
+        FireShot(facingDirection);
     }
 
     private bool OnCooldown()
@@ -40,48 +38,18 @@ public class PlayerAttack : MonoBehaviour
         return Time.time < lastAttackTime + attackCooldown;
     }
 
-    private void Attack(int facingDir)
+    private void FireShot(int facingDirection)
     {
-        Vector2 attackHitBox = GetAttackHitBox(facingDir);
-        Collider2D[] enemiesHit = Physics2D.OverlapCircleAll(attackHitBox, attackRange, enemyLayer);
-
-        foreach (Collider2D enemy in enemiesHit)
+        if (!projectilePrefab)
         {
-            if (!enemy) continue;
-
-            DealDamage(enemy);
-            ApplyKnockback(enemy);
+            Debug.LogWarning($"{name}: Assign a PlayerProjectile prefab.");
+            return;
         }
-    }
 
-    private Vector2 GetAttackHitBox(int facingDir)
-    {
-        return (Vector2)transform.position + new Vector2(facingDir * attackOffset.x, attackOffset.y);
-    }
+        Transform origin = firePoint ? firePoint : transform;
+        Vector2 direction = facingDirection >= 0 ? Vector2.right : Vector2.left;
 
-    private void DealDamage(Collider2D enemy)
-    {
-        EnemyHealth health = enemy.GetComponent<EnemyHealth>();
-        if (health)
-            health.TakeDamage(damage);
-    }
-
-    private void ApplyKnockback(Collider2D enemy)
-    {
-        EnemyKnockbackReceiver knockback = enemy.GetComponent<EnemyKnockbackReceiver>();
-        if (!knockback) return;
-
-        float direction = (enemy.transform.position.x >= transform.position.x) ? 1f : -1f;
-        Vector2 velocity = new Vector2(direction * knockbackDistance, knockbackHeight);
-
-        knockback.StartKnockback(velocity, knockbackDuration);
-    }
-
-    void OnDrawGizmosSelected()
-    {
-        // Shows the attack range in the Scene view
-        Vector2 center = GetAttackHitBox(attackDirection);
-
-        Gizmos.DrawWireSphere(center, attackRange);
+        PlayerProjectile projectile = Instantiate(projectilePrefab, origin.position, Quaternion.identity);
+        projectile.Initialize( transform, direction, projectileSpeed, damage, projectileLifetime, knockbackDistance, knockbackHeight, knockbackDuration);
     }
 }
