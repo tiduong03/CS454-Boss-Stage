@@ -36,7 +36,7 @@ public class PlayerControlCenter : MonoBehaviour
         move.UpdateFacingDirection();
 
         // Update jump state (ground / wall checks / timers)
-        jump.Tick(move.MoveInput);
+        jump.UpdateJumpState(move.MoveInput);
 
         if (jump.CanJump(knockback.IsKnockedback, dash.IsDashing))
             jumpRequested = true;

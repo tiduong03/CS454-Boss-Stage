@@ -66,17 +66,6 @@ public class PlayerHealth : MonoBehaviour
             Die();
     }
 
-    public void Heal(int amount)
-    {
-        if (IsDead) return;
-        if (amount <= 0) return;
-
-        CurrentHP += amount;
-        if (CurrentHP > maxHP) CurrentHP = maxHP;
-
-        Debug.Log($"Player healed {amount}. HP now: {CurrentHP}/{maxHP}");
-    }
-
     private void ShowDamageNumber(int damageAmount)
     {
         if (damageTextPrefab == null)
@@ -136,18 +125,5 @@ public class PlayerHealth : MonoBehaviour
             EndScreenUI.Instance.ShowLose();
 
         gameObject.SetActive(false);
-    }
-
-    void Update()
-    {
-        if (Input.GetKeyDown(KeyCode.H))
-        {
-            TakeDamage(10);
-        }
-
-        if (Input.GetKeyDown(KeyCode.J))
-        {
-            Heal(10);
-        }
     }
 }

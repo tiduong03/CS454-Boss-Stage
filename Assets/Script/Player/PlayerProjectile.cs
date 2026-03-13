@@ -19,7 +19,7 @@ public class PlayerProjectile : MonoBehaviour
         projectileCollider = GetComponent<Collider2D>();
 
         rb.gravityScale = 0f;
-        rb.freezeRotation = true;
+        //rb.freezeRotation = true;
         rb.collisionDetectionMode = CollisionDetectionMode2D.Continuous;
 
         projectileCollider.isTrigger = true;
@@ -36,10 +36,9 @@ public class PlayerProjectile : MonoBehaviour
         Vector2 moveDirection = direction.sqrMagnitude <= 0.001f ? Vector2.right : direction.normalized;
         rb.linearVelocity = moveDirection * speed;
 
-        // Flip projectile sprite when shooting left
-        Vector3 scale = transform.localScale;
-        scale.x = Mathf.Abs(scale.x) * (moveDirection.x >= 0f ? 1f : -1f);
-        transform.localScale = scale;
+        // Flip projectile sprite when shooting left/right
+        float zRotation = moveDirection.x >= 0f ? 90f : -90f;
+        transform.rotation = Quaternion.Euler(0f, 0f, zRotation);
 
         IgnoreOwnerCollisions();
         Destroy(gameObject, lifetime);

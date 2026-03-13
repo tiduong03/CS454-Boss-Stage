@@ -25,7 +25,7 @@ public class PlayerAttack : MonoBehaviour
 
     public void TryAttack(int facingDirection, bool isKnockedBack, bool isDashing)
     {
-        if (!Input.GetMouseButtonDown(0)) return;
+        if (!Input.GetMouseButtonDown(0) && !Input.GetKeyDown(KeyCode.H)) return;
         if (isKnockedBack || isDashing) return;
         if (OnCooldown()) return;
 

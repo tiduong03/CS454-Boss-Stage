@@ -1,151 +1,329 @@
 using System.Collections.Generic;
 using UnityEngine;
 
+[RequireComponent(typeof(Rigidbody2D))]
+[RequireComponent(typeof(EnemyHealth))]
 public class BossAI : MonoBehaviour
 {
-    private enum State { MoveToPoint, Hover, Dash, Vulnerable }
-
-    [Header("Target / Points")]
+    [Header("References")]
     [SerializeField] private Transform player;
-    [SerializeField] private List<Transform> points = new();
-    [SerializeField] private float arriveDistance = 0.15f;
+    [SerializeField] private Transform firePoint;
+    [SerializeField] private BossProjectile projectilePrefab;
 
-    [Header("Movement")]
-    [SerializeField] private float flySpeed = 4f;
-    [SerializeField] private float dashSpeed = 12f;
-    [SerializeField] private float dashTime = 0.35f;
+    [Header("Arena Movement")]
+    [Tooltip("Drop your platform colliders here. The boss will pick random hover points above them.")]
+    [SerializeField] private List<Collider2D> arenaPlatforms = new List<Collider2D>();
+    [SerializeField] private float hoverHeightAbovePlatform = 2f;
+    [SerializeField] private float platformEdgePadding = 0.5f;
+    [SerializeField] private float moveSpeed = 4f;
+    [SerializeField] private float retargetTime = 2f;
+    [SerializeField] private float arriveDistance = 0.2f;
+    [SerializeField] private float hoverAmplitude = 0.25f;
+    [SerializeField] private float hoverFrequency = 2f;
+    [SerializeField] private bool facePlayer = true;
 
-    [Header("Timers")]
-    [SerializeField] private float hoverTime = 0.35f;
-    [SerializeField] private float vulnerableTime = 0.9f;
+    [Header("Summons")]
+    [Tooltip("Spawned once when boss HP reaches 50% or lower.")]
+    [SerializeField] private GameObject phase50EnemyPrefab;
+    [SerializeField] private int phase50SpawnCount = 1;
 
-    [Header("Layers")]
-    [SerializeField] private string enemyLayerName = "Enemy";
-    [SerializeField] private string invulnLayerName = "EnemyInvuln";
+    [Tooltip("Spawned once when boss HP reaches 25% or lower.")]
+    [SerializeField] private GameObject phase25EnemyPrefab;
+    [SerializeField] private int phase25SpawnCount = 1;
 
-    [Header("Visual cue (optional)")]
-    [SerializeField] private SpriteRenderer sr;
-    [SerializeField] private Color invulnColor = Color.white;
-    [SerializeField] private Color vulnerableColor = Color.yellow;
+    [Tooltip("Optional. If empty, minions will spawn near the boss.")]
+    [SerializeField] private Transform[] summonPoints;
+
+    [Header("Attack Settings")]
+    [SerializeField] private float attackCooldown = 2f;
+    [SerializeField] private float projectileSpeed = 8f;
+    [SerializeField] private int projectileDamage = 1;
+    [SerializeField] private float spreadAngle = 18f;
+    [SerializeField] private int radialProjectileCount = 8;
 
     private Rigidbody2D rb;
-    private State state = State.MoveToPoint;
-    private Transform currentTarget;
-    private float stateEndTime;
-    private int dashDir = 1;
+    private EnemyHealth health;
 
-    void Awake()
+    private Vector2 moveTarget;
+    private float retargetTimer;
+    private float attackTimer;
+
+    private bool phase50Triggered;
+    private bool phase25Triggered;
+
+    private void Awake()
     {
         rb = GetComponent<Rigidbody2D>();
-        if (!sr) sr = GetComponentInChildren<SpriteRenderer>();
+        health = GetComponent<EnemyHealth>();
 
+        rb.gravityScale = 0f;
+        rb.freezeRotation = true;
+    }
+
+    private void Start()
+    {
         if (!player)
         {
-            var p = GameObject.FindGameObjectWithTag("Player");
-            if (p) player = p.transform;
+            GameObject playerObject = GameObject.FindGameObjectWithTag("Player");
+            if (playerObject)
+                player = playerObject.transform;
         }
 
-        PickNextPoint();
-        SetVulnerable(false);
+        PickNewMoveTarget();
+        retargetTimer = retargetTime;
+        attackTimer = attackCooldown;
     }
 
-    void Update()
+    private void Update()
     {
-        if (!player || points.Count == 0) return;
+        if (health.IsDead)
+            return;
 
-        switch (state)
+        HandlePhaseChanges();
+        HandleRetargetTimer();
+        HandleAttackTimer();
+        UpdateFacing();
+    }
+
+    private void FixedUpdate()
+    {
+        if (health.IsDead)
+            return;
+
+        MoveBoss();
+    }
+
+    private void HandlePhaseChanges()
+    {
+        float hpPercent = GetHealthPercent();
+
+        if (!phase50Triggered && hpPercent <= 0.5f)
         {
-            case State.MoveToPoint:
-                MoveTowardPoint();
-                break;
-
-            case State.Hover:
-                if (Time.time >= stateEndTime) StartDash();
-                break;
-
-            case State.Dash:
-                if (Time.time >= stateEndTime) StartVulnerable();
-                break;
-
-            case State.Vulnerable:
-                if (Time.time >= stateEndTime) StartMoveToNextPoint();
-                break;
+            attackCooldown *= hpPercent;
+            phase50Triggered = true;
+            SpawnMinions(phase50EnemyPrefab, phase50SpawnCount);
         }
-    }
 
-    private void MoveTowardPoint()
-    {
-        if (!currentTarget) { PickNextPoint(); return; }
-
-        Vector2 pos = rb.position;
-        Vector2 target = currentTarget.position;
-        Vector2 next = Vector2.MoveTowards(pos, target, flySpeed * Time.deltaTime);
-        rb.MovePosition(next);
-
-        if (Vector2.Distance(next, target) <= arriveDistance)
-            StartHover();
-    }
-
-    private void StartHover()
-    {
-        state = State.Hover;
-        stateEndTime = Time.time + hoverTime;
-        rb.linearVelocity = Vector2.zero;
-        SetVulnerable(false);
-    }
-
-    private void StartDash()
-    {
-        state = State.Dash;
-        stateEndTime = Time.time + dashTime;
-
-        // dash horizontally toward the player's side
-        dashDir = (player.position.x >= transform.position.x) ? 1 : -1;
-        rb.linearVelocity = new Vector2(dashDir * dashSpeed, 0f);
-
-        SetVulnerable(false);
-    }
-
-    private void StartVulnerable()
-    {
-        state = State.Vulnerable;
-        stateEndTime = Time.time + vulnerableTime;
-        rb.linearVelocity = Vector2.zero;
-
-        SetVulnerable(true);
-    }
-
-    private void StartMoveToNextPoint()
-    {
-        SetVulnerable(false);
-        PickNextPoint();
-        state = State.MoveToPoint;
-    }
-
-    private void PickNextPoint()
-    {
-        // simple: pick a random point different from current
-        if (points.Count == 0) return;
-
-        Transform next = currentTarget;
-        int safety = 20;
-        while (next == currentTarget && safety-- > 0)
-            next = points[Random.Range(0, points.Count)];
-
-        currentTarget = next;
-    }
-
-    private void SetVulnerable(bool yes)
-    {
-        int layer = LayerMask.NameToLayer(yes ? enemyLayerName : invulnLayerName);
-        if (layer != -1)
+        if (!phase25Triggered && hpPercent <= 0.25f)
         {
-            gameObject.layer = layer;
-            // apply to children too (so PlayerAttack mask works reliably)
-            foreach (Transform t in GetComponentsInChildren<Transform>())
-                t.gameObject.layer = layer;
+            attackCooldown *= hpPercent;
+            phase25Triggered = true;
+            SpawnMinions(phase25EnemyPrefab, phase25SpawnCount);
+        }
+    }
+
+    private float GetHealthPercent()
+    {
+        if (health.maxHP <= 0)
+            return 0f;
+
+        return (float)health.CurrentHP / health.maxHP;
+    }
+
+    private void HandleRetargetTimer()
+    {
+        retargetTimer -= Time.deltaTime;
+
+        bool reachedTarget = Vector2.Distance(rb.position, moveTarget) <= arriveDistance;
+        if (reachedTarget || retargetTimer <= 0f)
+        {
+            PickNewMoveTarget();
+            retargetTimer = retargetTime;
+        }
+    }
+
+    private void PickNewMoveTarget()
+    {
+        if (arenaPlatforms == null || arenaPlatforms.Count == 0)
+        {
+            moveTarget = rb.position;
+            return;
         }
 
-        if (sr) sr.color = yes ? vulnerableColor : invulnColor;
+        Collider2D platform = arenaPlatforms[Random.Range(0, arenaPlatforms.Count)];
+        if (!platform)
+        {
+            moveTarget = rb.position;
+            return;
+        }
+
+        Bounds bounds = platform.bounds;
+
+        float minX = bounds.min.x + platformEdgePadding;
+        float maxX = bounds.max.x - platformEdgePadding;
+
+        if (minX > maxX)
+        {
+            minX = bounds.center.x;
+            maxX = bounds.center.x;
+        }
+
+        float targetX = Random.Range(minX, maxX);
+        float targetY = bounds.max.y + hoverHeightAbovePlatform;
+
+        moveTarget = new Vector2(targetX, targetY);
+    }
+
+    private void MoveBoss()
+    {
+        Vector2 hoverOffset = new Vector2(0f, Mathf.Sin(Time.time * hoverFrequency) * hoverAmplitude);
+        Vector2 desiredPosition = moveTarget + hoverOffset;
+        Vector2 nextPosition = Vector2.MoveTowards(rb.position, desiredPosition, moveSpeed * Time.fixedDeltaTime);
+
+        rb.MovePosition(nextPosition);
+    }
+
+    private void HandleAttackTimer()
+    {
+        if (!player)
+            return;
+
+        attackTimer -= Time.deltaTime;
+        if (attackTimer > 0f)
+            return;
+
+        DoAttack();
+        attackTimer = attackCooldown;
+    }
+
+    private void DoAttack()
+    {
+        Debug.Log("attackCD: " + attackCooldown);
+        int unlockedAttackCount = 1;
+
+        if (phase50Triggered)
+            unlockedAttackCount++;
+
+        if (phase25Triggered)
+            unlockedAttackCount++;
+
+        int attackIndex = Random.Range(0, unlockedAttackCount);
+
+        switch (attackIndex)
+        {
+            case 0:
+                BasicShot();
+                break;
+
+            case 1:
+                SpreadShot();
+                break;
+
+            case 2:
+                RadialBurst();
+                break;
+        }
+    }
+
+    private void BasicShot()
+    {
+        Vector2 direction = GetDirectionToPlayer();
+        Shoot(direction);
+    }
+
+    private void SpreadShot()
+    {
+        Vector2 baseDirection = GetDirectionToPlayer();
+        float baseAngle = Mathf.Atan2(baseDirection.y, baseDirection.x) * Mathf.Rad2Deg;
+
+        Shoot(AngleToDirection(baseAngle - spreadAngle));
+        Shoot(AngleToDirection(baseAngle));
+        Shoot(AngleToDirection(baseAngle + spreadAngle));
+    }
+
+    private void RadialBurst()
+    {
+        if (radialProjectileCount < 1)
+            return;
+
+        float step = 360f / radialProjectileCount;
+        for (int i = 0; i < radialProjectileCount; i++)
+        {
+            float angle = step * i;
+            Shoot(AngleToDirection(angle));
+        }
+    }
+
+    private Vector2 GetDirectionToPlayer()
+    {
+        if (!player)
+            return Vector2.right;
+
+        Vector2 direction = (player.position - transform.position);
+        if (direction.sqrMagnitude <= 0.001f)
+            return Vector2.right;
+
+        return direction.normalized;
+    }
+
+    private Vector2 AngleToDirection(float angleDeg)
+    {
+        float angleRad = angleDeg * Mathf.Deg2Rad;
+        return new Vector2(Mathf.Cos(angleRad), Mathf.Sin(angleRad)).normalized;
+    }
+
+    private void Shoot(Vector2 direction)
+    {
+        if (!projectilePrefab || !firePoint)
+        {
+            Debug.LogWarning($"{name}: Assign a projectile prefab and fire point on BossAI.");
+            return;
+        }
+
+        BossProjectile projectile = Instantiate(projectilePrefab, firePoint.position, Quaternion.identity);
+        projectile.Initialize(direction, projectileSpeed, projectileDamage);
+    }
+
+    private void SpawnMinions(GameObject enemyPrefab, int amount)
+    {
+        if (!enemyPrefab || amount <= 0)
+            return;
+
+        for (int i = 0; i < amount; i++)
+        {
+            Vector3 spawnPosition = GetSpawnPosition(i);
+            Instantiate(enemyPrefab, spawnPosition, Quaternion.identity);
+        }
+    }
+
+    private Vector3 GetSpawnPosition(int index)
+    {
+        if (summonPoints != null && summonPoints.Length > 0)
+        {
+            Transform point = summonPoints[index % summonPoints.Length];
+            if (point)
+                return point.position;
+        }
+
+        float offsetX = Random.Range(-2f, 2f);
+        float offsetY = Random.Range(-1f, 1f);
+        return transform.position + new Vector3(offsetX, offsetY, 0f);
+    }
+
+    private void UpdateFacing()
+    {
+        if (!facePlayer || !player)
+            return;
+
+        Vector3 scale = transform.localScale;
+        float sign = (player.position.x >= transform.position.x) ? 1f : -1f;
+        scale.x = Mathf.Abs(scale.x) * sign;
+        transform.localScale = scale;
+    }
+
+    private void OnDrawGizmosSelected()
+    {
+        Gizmos.color = Color.cyan;
+        Gizmos.DrawWireSphere(moveTarget, 0.2f);
+
+        if (summonPoints == null)
+            return;
+
+        Gizmos.color = Color.yellow;
+        foreach (Transform point in summonPoints)
+        {
+            if (point)
+                Gizmos.DrawWireSphere(point.position, 0.25f);
+        }
     }
 }
