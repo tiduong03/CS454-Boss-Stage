@@ -4,16 +4,13 @@ using UnityEngine;
 
 public class PlayerAttack : MonoBehaviour
 {
-    [Header("Attack")]
-    [SerializeField] private int damage = 1;
-    [SerializeField] private float attackCooldown = 0.25f;
-
     [Header("Knockback")]
     [SerializeField] private float knockbackDistance = 12f;
     [SerializeField] private float knockbackHeight = 6f;
     [SerializeField] private float knockbackDuration = 0.2f;
 
     [Header("Range Attack")]
+    [SerializeField] private float attackCooldown = 0.25f;
     [SerializeField] private Transform firePoint;
     [SerializeField] private PlayerProjectile projectilePrefab;
     [SerializeField] private float projectileSpeed = 8f;
@@ -25,7 +22,7 @@ public class PlayerAttack : MonoBehaviour
 
     public void TryAttack(int facingDirection, bool isKnockedBack, bool isDashing)
     {
-        if (!Input.GetMouseButtonDown(0) && !Input.GetKeyDown(KeyCode.H)) return;
+        if (!Input.GetMouseButtonDown(0) && !Input.GetKeyDown(KeyCode.H) && !Input.GetButtonDown("Fire1")) return;
         if (isKnockedBack || isDashing) return;
         if (OnCooldown()) return;
 
@@ -50,6 +47,7 @@ public class PlayerAttack : MonoBehaviour
         Vector2 direction = facingDirection >= 0 ? Vector2.right : Vector2.left;
 
         PlayerProjectile projectile = Instantiate(projectilePrefab, origin.position, Quaternion.identity);
-        projectile.Initialize( transform, direction, projectileSpeed, damage, projectileLifetime, knockbackDistance, knockbackHeight, knockbackDuration);
+        projectile.Initialize(transform, direction, projectileSpeed, projectileDamage, projectileLifetime,
+            knockbackDistance, knockbackHeight, knockbackDuration);
     }
 }

@@ -18,7 +18,8 @@ public class PlayerDash : MonoBehaviour
 
     public bool CanDash(bool isKnockedBack)
     {
-        if (!Input.GetKeyDown(KeyCode.LeftShift) || isKnockedBack || isDashing) return false;
+        if (!Input.GetKeyDown(KeyCode.LeftShift) && !Input.GetButtonDown("Fire3")) return false;
+        if (isKnockedBack || isDashing) return false;
         if (Time.time < lastDashTime + dashCooldown) return false;
 
         isDashing = true;

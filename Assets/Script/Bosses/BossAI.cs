@@ -24,20 +24,22 @@ public class BossAI : MonoBehaviour
 
     [Header("Summons")]
     [Tooltip("Spawned once when boss HP reaches 50% or lower.")]
-    [SerializeField] private GameObject phase50EnemyPrefab;
-    [SerializeField] private int phase50SpawnCount = 1;
+    [SerializeField] private GameObject phase1EnemyPrefab;
+    [SerializeField] private int phase1SpawnCount = 1;
 
-    [Tooltip("Spawned once when boss HP reaches 25% or lower.")]
-    [SerializeField] private GameObject phase25EnemyPrefab;
-    [SerializeField] private int phase25SpawnCount = 1;
+    [Header("Split Phase (30%)")]
+    [Tooltip("Boss prefab to spawn when this boss reaches 30% HP.")]
+    [SerializeField] private BossAI splitBossPrefab;
+    [SerializeField] private int splitBossCount = 1;
+    [SerializeField][Range(0.01f, 1f)] private float splitHpPercent = 0.30f;
 
-    [Tooltip("Optional. If empty, minions will spawn near the boss.")]
+    [Tooltip("Optional. If empty, summons / split bosses will spawn near the boss.")]
     [SerializeField] private Transform[] summonPoints;
 
     [Header("Attack Settings")]
-    [SerializeField] private float attackCooldown = 2f;
+    [SerializeField] private float attackCooldown = 1.2f;
     [SerializeField] private float projectileSpeed = 8f;
-    [SerializeField] private int projectileDamage = 1;
+    [SerializeField] private int projectileDamage = 5;
     [SerializeField] private float spreadAngle = 18f;
     [SerializeField] private int radialProjectileCount = 8;
 
@@ -48,8 +50,9 @@ public class BossAI : MonoBehaviour
     private float retargetTimer;
     private float attackTimer;
 
-    private bool phase50Triggered;
-    private bool phase25Triggered;
+    private bool phase1Triggered;
+    private bool phase2Triggered;
+    private bool canSplit = true;
 
     private void Awake()
     {
@@ -97,19 +100,57 @@ public class BossAI : MonoBehaviour
     {
         float hpPercent = GetHealthPercent();
 
-        if (!phase50Triggered && hpPercent <= 0.5f)
+        if (!phase1Triggered && hpPercent <= 0.5f)
         {
-            attackCooldown *= hpPercent;
-            phase50Triggered = true;
-            SpawnMinions(phase50EnemyPrefab, phase50SpawnCount);
+            phase1Triggered = true;
+            //projectileDamage = 2;
+            //attackCooldown *= 0.5f;
+            //SpawnMinions(phase1EnemyPrefab, phase1SpawnCount);
+            //SpawnSplitBosses();
         }
 
-        if (!phase25Triggered && hpPercent <= 0.25f)
+        if (!phase2Triggered && hpPercent <= 0.3f)
         {
-            attackCooldown *= hpPercent;
-            phase25Triggered = true;
-            SpawnMinions(phase25EnemyPrefab, phase25SpawnCount);
+            phase2Triggered = true;
         }
+
+        if (canSplit && hpPercent <= splitHpPercent)
+        {
+            SpawnSplitBosses();
+        }
+    }
+
+    private void SpawnSplitBosses()
+    {
+        if (!splitBossPrefab || splitBossCount <= 0)
+            return;
+
+        canSplit = false;
+        int splitHp = Mathf.CeilToInt(health.maxHP * splitHpPercent);
+
+        for (int i = 0; i < splitBossCount; i++)
+        {
+            Vector3 spawnPosition = GetSpawnPosition(i);
+            BossAI newBoss = Instantiate(splitBossPrefab, spawnPosition, Quaternion.identity);
+            newBoss.InitializeSplitBoss(player, splitHp);
+        }
+    }
+
+    public void InitializeSplitBoss(Transform targetPlayer, int newHp)
+    {
+        player = targetPlayer;
+        canSplit = false;
+
+        // Spawned boss starts already in late phase.
+        phase1Triggered = true;
+        phase2Triggered = true;
+
+        if (health != null)
+            health.SetCurrentHP(newHp);
+
+        PickNewMoveTarget();
+        retargetTimer = retargetTime;
+        attackTimer = attackCooldown;
     }
 
     private float GetHealthPercent()
@@ -188,13 +229,12 @@ public class BossAI : MonoBehaviour
 
     private void DoAttack()
     {
-        Debug.Log("attackCD: " + attackCooldown);
         int unlockedAttackCount = 1;
 
-        if (phase50Triggered)
+        if (phase1Triggered)
             unlockedAttackCount++;
 
-        if (phase25Triggered)
+        if (phase2Triggered)
             unlockedAttackCount++;
 
         int attackIndex = Random.Range(0, unlockedAttackCount);
@@ -249,7 +289,7 @@ public class BossAI : MonoBehaviour
         if (!player)
             return Vector2.right;
 
-        Vector2 direction = (player.position - transform.position);
+        Vector2 direction = player.position - transform.position;
         if (direction.sqrMagnitude <= 0.001f)
             return Vector2.right;
 

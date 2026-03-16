@@ -32,6 +32,9 @@ public class PlayerControlCenter : MonoBehaviour
 
     void Update()
     {
+        if (GameUIManager.IsGameFrozen)
+            return;
+
         move.ReadMoveInput();
         move.UpdateFacingDirection();
 
@@ -51,6 +54,9 @@ public class PlayerControlCenter : MonoBehaviour
 
     void FixedUpdate()
     {
+        if (GameUIManager.IsGameFrozen)
+            return;
+
         if (jumpRequested)
         {
             rb.linearVelocity = jump.GetJumpVelocity(rb.linearVelocity.x);
@@ -73,7 +79,6 @@ public class PlayerControlCenter : MonoBehaviour
 
         float xVelocity = move.MoveInput * move.MoveSpeed;
 
-        // If sliding on a wall and pressing into it, don't keep pushing into the wall
         if (jump.IsWallSliding)
         {
             bool pressingIntoWall = (jump.WallSide == 1 && move.MoveInput > 0f) || (jump.WallSide == -1 && move.MoveInput < 0f);
@@ -82,7 +87,6 @@ public class PlayerControlCenter : MonoBehaviour
                 xVelocity = 0f;
         }
 
-        // Briefly lock horizontal movement after wall jump
         if (jump.IsWallJumping)
             xVelocity = jump.ForcedWallJumpX;
 

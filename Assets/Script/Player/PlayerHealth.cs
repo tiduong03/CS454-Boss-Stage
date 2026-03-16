@@ -17,6 +17,7 @@ public class PlayerHealth : MonoBehaviour
     [SerializeField] private Transform damageTextSpawnPoint;
     [SerializeField] private Vector3 damageTextOffset = new Vector3(0f, 1.2f, 0f);
 
+    [SerializeField] private PlayerDash dash;
     public int CurrentHP { get; private set; }
     public bool IsDead { get; private set; }
 
@@ -26,6 +27,8 @@ public class PlayerHealth : MonoBehaviour
 
     void Awake()
     {
+        //if (!dash) dash = GetComponent<PlayerDash>();
+
         spriteRenderers = GetComponentsInChildren<SpriteRenderer>(true);
         originalColors = new Color[spriteRenderers.Length];
 
@@ -46,6 +49,7 @@ public class PlayerHealth : MonoBehaviour
     {
         if (IsDead) return;
         if (damageAmount <= 0) return;
+        if (dash != null && dash.IsDashing) return;
 
         CurrentHP -= damageAmount;
         if (CurrentHP < 0) CurrentHP = 0;
@@ -121,8 +125,8 @@ public class PlayerHealth : MonoBehaviour
 
         RestoreOriginalColors();
 
-        if (EndScreenUI.Instance != null)
-            EndScreenUI.Instance.ShowLose();
+        if (GameUIManager.Instance != null)
+            GameUIManager.Instance.ShowLose();
 
         gameObject.SetActive(false);
     }

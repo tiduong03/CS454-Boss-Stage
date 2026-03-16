@@ -1,5 +1,7 @@
 using UnityEngine;
+using System;
 using System.Collections;
+
 public class EnemyHealth : MonoBehaviour
 {
     [Header("HP")]
@@ -22,9 +24,22 @@ public class EnemyHealth : MonoBehaviour
     public int CurrentHP { get; private set; }
     public bool IsDead { get; private set; }
 
+    public event Action<int, int> OnHealthChanged;
+
     private SpriteRenderer[] spriteRenderers;
     private Color[] originalColors;
     private Coroutine flashRoutine;
+
+    private static int activeBossCount = 0;
+    private bool bossRegistered = false;
+    public static event Action OnAllBossesDefeated;
+
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+
+    private static void ResetBossCounter()
+    {
+        activeBossCount = 0;
+    }
 
     private void Awake()
     {
@@ -39,6 +54,54 @@ public class EnemyHealth : MonoBehaviour
             if (spriteRenderers[i] != null)
                 originalColors[i] = spriteRenderers[i].color;
         }
+
+        NotifyHealthChanged();
+    }
+
+    private void OnEnable()
+    {
+        RegisterBoss();
+    }
+
+    private void OnDisable()
+    {
+        if (!IsDead)
+            UnregisterBoss(false);
+    }
+
+    private void RegisterBoss()
+    {
+        if (!isBoss || bossRegistered)
+            return;
+
+        activeBossCount++;
+        bossRegistered = true;
+    }
+
+    private void UnregisterBoss(bool checkForWin)
+    {
+        if (!isBoss || !bossRegistered)
+            return;
+
+        bossRegistered = false;
+        activeBossCount = Mathf.Max(0, activeBossCount - 1);
+
+        if (checkForWin && activeBossCount == 0)
+        {
+            if (GameUIManager.Instance != null)
+                GameUIManager.Instance.ShowWin();
+
+            OnAllBossesDefeated?.Invoke();
+        }
+    }
+
+    public void SetCurrentHP(int value)
+    {
+        CurrentHP = Mathf.Clamp(value, 0, maxHP);
+        NotifyHealthChanged();
+
+        if (CurrentHP == 0 && !IsDead)
+            Die();
     }
 
     public void TakeDamage(int damageAmount)
@@ -51,6 +114,7 @@ public class EnemyHealth : MonoBehaviour
 
         Debug.Log($"{gameObject.name} took {damageAmount} damage. HP now: {CurrentHP}/{maxHP}");
 
+        NotifyHealthChanged();
         ShowDamageNumber(damageAmount);
 
         if (flashOnHit && spriteRenderers.Length > 0)
@@ -63,6 +127,11 @@ public class EnemyHealth : MonoBehaviour
 
         if (CurrentHP == 0)
             Die();
+    }
+
+    private void NotifyHealthChanged()
+    {
+        OnHealthChanged?.Invoke(CurrentHP, maxHP);
     }
 
     private void ShowDamageNumber(int damageAmount)
@@ -115,10 +184,17 @@ public class EnemyHealth : MonoBehaviour
         if (IsDead) return;
         IsDead = true;
 
-        // Only show win screen if this enemy is the boss
-        if (isBoss && EndScreenUI.Instance != null)
-            EndScreenUI.Instance.ShowWin();
-        
+        if (flashRoutine != null)
+        {
+            StopCoroutine(flashRoutine);
+            flashRoutine = null;
+        }
+
+        RestoreOriginalColors();
+
+        if (isBoss)
+            UnregisterBoss(true);
+
         gameObject.SetActive(false);
     }
 }
