@@ -14,6 +14,7 @@ public class FlyingEnemyControlCenter : MonoBehaviour
 
     [SerializeField] private Transform player;
     [SerializeField] private SpriteRenderer spriteRenderer;
+    [SerializeField] private Animator animator;
     [SerializeField] private bool flipSprite = true;
 
     private void Awake()
@@ -29,6 +30,9 @@ public class FlyingEnemyControlCenter : MonoBehaviour
 
         if (spriteRenderer == null)
             spriteRenderer = GetComponentInChildren<SpriteRenderer>();
+
+        if (animator == null)
+            animator = GetComponentInChildren<Animator>();
     }
 
     private void Start()
@@ -54,6 +58,7 @@ public class FlyingEnemyControlCenter : MonoBehaviour
         {
             rb.linearVelocity = knockback.Velocity;
             UpdateFacing(rb.linearVelocity);
+            UpdateAnimation();
             return;
         }
 
@@ -75,6 +80,7 @@ public class FlyingEnemyControlCenter : MonoBehaviour
 
         rb.linearVelocity = moveDirection * moveSpeed;
         UpdateFacing(rb.linearVelocity);
+        UpdateAnimation();
     }
 
     private void UpdateFacing(Vector2 velocity)
@@ -84,5 +90,13 @@ public class FlyingEnemyControlCenter : MonoBehaviour
         if (Mathf.Abs(velocity.x) < 0.05f) return;
 
         spriteRenderer.flipX = velocity.x > 0f;
+    }
+
+    private void UpdateAnimation()
+    {
+        if (animator == null) return;
+
+        float speed = rb.linearVelocity.magnitude;
+        animator.SetFloat("Speed", speed);
     }
 }

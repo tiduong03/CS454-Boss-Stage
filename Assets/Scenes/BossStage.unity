@@ -3838,7 +3838,7 @@ MonoBehaviour:
   splitBossCount: 1
   splitHpPercent: 0.1
   summonPoints: []
-  attackCooldown: 1
+  attackCooldown: 1.2
   projectileSpeed: 12
   projectileDamage: 5
   spreadAngle: 18
