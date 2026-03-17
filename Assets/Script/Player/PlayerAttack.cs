@@ -4,6 +4,10 @@ using UnityEngine;
 
 public class PlayerAttack : MonoBehaviour
 {
+    [Header("Animation")]
+    [SerializeField] private Animator animator;
+    [SerializeField] private string attackTriggerName = "Attack";
+
     [Header("Knockback")]
     [SerializeField] private float knockbackDistance = 12f;
     [SerializeField] private float knockbackHeight = 6f;
@@ -20,6 +24,12 @@ public class PlayerAttack : MonoBehaviour
     private int attackDirection;
     private float lastAttackTime = -999f;
 
+    private void Awake()
+    {
+        if (animator == null)
+            animator = GetComponent<Animator>();
+    }
+
     public void TryAttack(int facingDirection, bool isKnockedBack, bool isDashing)
     {
         if (!Input.GetMouseButtonDown(0) && !Input.GetKeyDown(KeyCode.H) && !Input.GetButtonDown("Fire1")) return;
@@ -27,6 +37,10 @@ public class PlayerAttack : MonoBehaviour
         if (OnCooldown()) return;
 
         lastAttackTime = Time.time;
+
+        if (animator != null)
+            animator.SetTrigger(attackTriggerName);
+
         FireShot(facingDirection);
     }
 

@@ -4,7 +4,7 @@ public class EnemyContactDamage : MonoBehaviour
 {
     [Header("Damage")]
     [SerializeField] private int damage = 1;
-    [SerializeField] private float hitCooldown = 0.4f;
+    [SerializeField] private float hitCooldown = 1.5f;
 
     [Header("Knockback")]
     [SerializeField] private float knockbackDistance = 6f;
@@ -15,37 +15,47 @@ public class EnemyContactDamage : MonoBehaviour
 
     private void OnCollisionStay2D(Collision2D collision)
     {
-        Transform contactTarget = collision.rigidbody ? collision.rigidbody.transform : collision.transform;
-
-        if (!contactTarget.CompareTag("Player")) return;
-        if (!OnCooldown()) return;
-
-        bool hitLanded = Hit(contactTarget);
-        if (hitLanded) ApplyKnockback(contactTarget);
+        TryHitPlayer(collision.transform);
     }
 
-    bool OnCooldown()
+    private void OnTriggerStay2D(Collider2D other)
     {
-        return Time.time >= lastHitTime + hitCooldown;
+        TryHitPlayer(other.transform);
     }
 
-    bool Hit(Transform contactTarget)
+    private void TryHitPlayer(Transform contactTarget)
     {
+        if (contactTarget == null) return;
+        if (!OffCooldown()) return;
+
         PlayerHealth playerHealth = contactTarget.GetComponentInParent<PlayerHealth>();
-        if (!playerHealth) return false;
+        if (playerHealth == null) return;
+
+        Transform playerRoot = playerHealth.transform.root;
+        if (!playerRoot.CompareTag("Player")) return;
 
         lastHitTime = Time.time;
         playerHealth.TakeDamage(damage);
 
-        return true;
+        ApplyKnockback(playerRoot);
     }
 
-    void ApplyKnockback(Transform contactTarget)
+    private bool OffCooldown()
     {
-        PlayerKnockbackReceiver knockback = contactTarget.GetComponentInParent<PlayerKnockbackReceiver>();
-        if (!knockback) return;
-        
-        float direction = (contactTarget.position.x >= transform.position.x) ? 1f : -1f;
+        return Time.time >= lastHitTime + hitCooldown;
+    }
+
+    private void ApplyKnockback(Transform playerRoot)
+    {
+        if (playerRoot == null) return;
+
+        PlayerKnockbackReceiver knockback = playerRoot.GetComponent<PlayerKnockbackReceiver>();
+        if (knockback == null)
+            knockback = playerRoot.GetComponentInChildren<PlayerKnockbackReceiver>();
+
+        if (knockback == null) return;
+
+        float direction = (playerRoot.position.x >= transform.position.x) ? 1f : -1f;
         Vector2 velocity = new Vector2(direction * knockbackDistance, knockbackHeight);
 
         knockback.StartKnockback(velocity, knockbackDuration);

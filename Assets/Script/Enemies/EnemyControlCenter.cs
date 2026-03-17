@@ -50,10 +50,13 @@ public class EnemyControlCenter : MonoBehaviour
         }
 
         // Priority 2: chase
+        Vector2 moveDirection;
+        float moveSpeed;
+
         if (chase.PlayerInChaseRange(transform, player))
         {
-            direction = chase.GetChaseDirection(transform, player);
-            rb.linearVelocity = new Vector2(direction * chase.ChaseSpeed, rb.linearVelocity.y);
+            moveDirection = chase.GetChaseDirection(transform, player);
+            moveSpeed = chase.ChaseSpeed;
         }
 
         // Priority 3: return to patrol bounds

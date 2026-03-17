@@ -103,9 +103,9 @@ public class BossAI : MonoBehaviour
         if (!phase1Triggered && hpPercent <= 0.5f)
         {
             phase1Triggered = true;
+            SpawnMinions(phase1EnemyPrefab, phase1SpawnCount);
             //projectileDamage = 2;
             //attackCooldown *= 0.5f;
-            //SpawnMinions(phase1EnemyPrefab, phase1SpawnCount);
             //SpawnSplitBosses();
         }
 

@@ -5,25 +5,43 @@ public class EnemyChase : MonoBehaviour
     [Header("Chase")]
     [SerializeField] private float chaseRange = 6f;
     [SerializeField] private float chaseSpeed = 4f;
+    [SerializeField] private float stopDistance = 0.8f;
 
     public float ChaseSpeed => chaseSpeed;
 
     public void SetTargetToChase(ref Transform player)
     {
-        if (player) return;
+        if (player != null) return;
 
         GameObject playerObject = GameObject.FindGameObjectWithTag("Player");
-        if (playerObject) player = playerObject.transform;
+        if (playerObject != null)
+            player = playerObject.transform;
     }
 
     public bool PlayerInChaseRange(Transform enemy, Transform player)
     {
+        if (enemy == null || player == null) return false;
+
         float dist = Vector2.Distance(enemy.position, player.position);
         return dist <= chaseRange;
     }
 
-    public int GetChaseDirection(Transform enemy, Transform player)
+    public Vector2 GetChaseDirection(Transform enemy, Transform player)
     {
-        return (player.position.x > enemy.position.x) ? 1 : -1;
+        if (enemy == null || player == null) return Vector2.zero;
+
+        Vector2 offset = player.position - enemy.position;
+        float distance = offset.magnitude;
+
+        if (distance <= stopDistance)
+            return Vector2.zero;
+
+        return offset.normalized;
+    }
+
+    private void OnDrawGizmosSelected()
+    {
+        Gizmos.color = Color.red;
+        Gizmos.DrawWireSphere(transform.position, chaseRange);
     }
 }
